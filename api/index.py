@@ -268,6 +268,7 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 # ----------------------------------------------------------
 
 @app.route('/', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/api/check', methods=['POST', 'OPTIONS'])
 def handler():
     if request.method == 'GET':
         # Serve the embedded HTML for GET requests
