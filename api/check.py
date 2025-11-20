@@ -167,11 +167,30 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 def handler():
     if request.method == 'GET':
         # Serve the HTML file for GET requests
-        try:
-            with open('index.html', 'r') as f:
-                return f.read(), 200, {'Content-Type': 'text/html'}
-        except FileNotFoundError:
-            return jsonify({'error': 'index.html not found'}), 404
+        import os
+        # Try different possible paths for index.html
+        possible_paths = [
+            'index.html',
+            '../index.html',
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'index.html')
+        ]
+        for path in possible_paths:
+            try:
+                with open(path, 'r') as f:
+                    return f.read(), 200, {'Content-Type': 'text/html'}
+            except FileNotFoundError:
+                continue
+        # If file not found, return a simple HTML response
+        return '''
+        <!DOCTYPE html>
+        <html>
+        <head><title>Score Checker</title></head>
+        <body>
+            <h1>Score Checker API</h1>
+            <p>Use POST /api/check to submit files</p>
+        </body>
+        </html>
+        ''', 200, {'Content-Type': 'text/html'}
     
     # Handle POST requests for API
     return check_files()
