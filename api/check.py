@@ -10,6 +10,110 @@ from typing import List, Dict, Set, Tuple, Optional, Any
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
+# HTML content embedded directly
+HTML_CONTENT = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Satisfaction Score Checker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); padding: 40px; }
+        h1 { color: #333; text-align: center; margin-bottom: 10px; font-size: 2em; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .file-input-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; }
+        .file-input-wrapper { position: relative; display: inline-block; width: 100%; }
+        input[type="file"] { width: 100%; padding: 12px; border: 2px dashed #667eea; border-radius: 8px; background: #f8f9ff; cursor: pointer; font-size: 14px; }
+        input[type="file"]:hover { border-color: #764ba2; background: #f0f2ff; }
+        .check-button { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; margin-top: 10px; }
+        .check-button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+        .check-button:active { transform: translateY(0); }
+        .check-button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .results { margin-top: 30px; padding: 20px; border-radius: 8px; display: none; }
+        .results.success { background: #d4edda; border: 2px solid #28a745; display: block; }
+        .results.error { background: #f8d7da; border: 2px solid #dc3545; display: block; }
+        .results h2 { margin-bottom: 15px; color: #333; }
+        .score-display { font-size: 2.5em; font-weight: bold; color: #28a745; text-align: center; margin: 20px 0; }
+        .info-item { margin: 10px 0; padding: 10px; background: white; border-radius: 5px; }
+        .warnings { margin-top: 15px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; }
+        .warnings h3 { margin-bottom: 10px; color: #856404; }
+        .warnings ul { list-style: none; padding-left: 0; }
+        .warnings li { padding: 5px 0; color: #856404; }
+        .loading { text-align: center; padding: 20px; display: none; }
+        .loading.active { display: block; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Robot Satisfaction Score Checker</h1>
+        <p class="subtitle">Upload your input and output files to validate and compute scores</p>
+        <form id="checkForm">
+            <div class="file-input-group">
+                <label for="input_file">Input File (.txt)</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="input_file" name="input_file" accept=".txt" required>
+                </div>
+            </div>
+            <div class="file-input-group">
+                <label for="output_file">Output File (.txt)</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="output_file" name="output_file" accept=".txt" required>
+                </div>
+            </div>
+            <button type="submit" class="check-button" id="checkButton">Check & Score</button>
+        </form>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px;">Processing files...</p>
+        </div>
+        <div class="results" id="results"></div>
+    </div>
+    <script>
+        const API_URL = '/api/check';
+        document.getElementById('checkForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            const inputFile = document.getElementById('input_file').files[0];
+            const outputFile = document.getElementById('output_file').files[0];
+            if (!inputFile || !outputFile) { showError('Please select both input and output files.'); return; }
+            formData.append('input_file', inputFile);
+            formData.append('output_file', outputFile);
+            const checkButton = document.getElementById('checkButton');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            checkButton.disabled = true;
+            loading.classList.add('active');
+            results.style.display = 'none';
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.success) { showSuccess(data); } else { showError(data.error || 'An error occurred.', data.warnings); }
+            } catch (error) { showError('Network error: ' + error.message); } finally {
+                checkButton.disabled = false;
+                loading.classList.remove('active');
+            }
+        });
+        function showSuccess(data) {
+            const results = document.getElementById('results');
+            results.className = 'results success';
+            results.innerHTML = `<h2>✅ Success!</h2><div class="score-display">${data.global_score}</div><p style="text-align: center; color: #666; margin-bottom: 20px;">Global Robotic Satisfaction Score</p><div class="info-item"><strong>Number of frameglasses:</strong> ${data.num_frames}</div><div class="info-item"><strong>Number of paintings:</strong> ${data.num_paintings}</div>${data.warnings && data.warnings.length > 0 ? `<div class="warnings"><h3>⚠️ Warnings</h3><ul>${data.warnings.map(w => '<li>' + w + '</li>').join('')}</ul></div>` : ''}`;
+            results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        function showError(error, warnings = []) {
+            const results = document.getElementById('results');
+            results.className = 'results error';
+            results.innerHTML = `<h2>❌ Error</h2><p style="margin: 15px 0; color: #721c24;">${error}</p>${warnings && warnings.length > 0 ? `<div class="warnings"><h3>Details</h3><ul>${warnings.map(w => '<li>' + w + '</li>').join('')}</ul></div>` : ''}`;
+            results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
+</body>
+</html>'''
+
 # Define custom types
 Frame = Tuple[int, Optional[int]]
 Frames = List[Frame]
@@ -166,31 +270,8 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 @app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 def handler():
     if request.method == 'GET':
-        # Serve the HTML file for GET requests
-        import os
-        # Try different possible paths for index.html
-        possible_paths = [
-            'index.html',
-            '../index.html',
-            os.path.join(os.path.dirname(os.path.dirname(__file__)), 'index.html')
-        ]
-        for path in possible_paths:
-            try:
-                with open(path, 'r') as f:
-                    return f.read(), 200, {'Content-Type': 'text/html'}
-            except FileNotFoundError:
-                continue
-        # If file not found, return a simple HTML response
-        return '''
-        <!DOCTYPE html>
-        <html>
-        <head><title>Score Checker</title></head>
-        <body>
-            <h1>Score Checker API</h1>
-            <p>Use POST /api/check to submit files</p>
-        </body>
-        </html>
-        ''', 200, {'Content-Type': 'text/html'}
+        # Serve the embedded HTML for GET requests
+        return HTML_CONTENT, 200, {'Content-Type': 'text/html'}
     
     # Handle POST requests for API
     return check_files()
