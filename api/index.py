@@ -270,12 +270,16 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 @app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 @app.route('/api/check', methods=['POST', 'OPTIONS'])
 def handler():
-    if request.method == 'GET':
-        # Serve the embedded HTML for GET requests
-        return Response(HTML_CONTENT, mimetype='text/html')
-    
-    # Handle POST requests for API
-    return check_files()
+    try:
+        if request.method == 'GET':
+            # Serve the embedded HTML for GET requests
+            return Response(HTML_CONTENT, mimetype='text/html', status=200)
+        
+        # Handle POST requests for API
+        return check_files()
+    except Exception as e:
+        # Return error response instead of crashing
+        return jsonify({'error': str(e)}), 500
 
 def check_files():
     # Handle CORS preflight
