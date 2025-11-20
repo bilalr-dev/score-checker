@@ -8,7 +8,7 @@ import json
 from typing import List, Dict, Set, Tuple, Optional, Any
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max (Vercel limit is 4.5MB for serverless, but we'll handle it)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max
 
 # HTML content embedded directly
 HTML_CONTENT = '''<!DOCTYPE html>
@@ -82,11 +82,11 @@ HTML_CONTENT = '''<!DOCTYPE html>
             const outputFile = document.getElementById('output_file').files[0];
             if (!inputFile || !outputFile) { showError('Please select both input and output files.'); return; }
             
-            // Check file sizes (Vercel limit is 4.5MB)
-            const maxSize = 4.5 * 1024 * 1024; // 4.5MB
+            // Check file sizes (50MB limit)
+            const maxSize = 50 * 1024 * 1024; // 50MB
             if (inputFile.size > maxSize || outputFile.size > maxSize) {
                 const fileSize = Math.max(inputFile.size, outputFile.size) / 1024 / 1024;
-                showError(`File too large. Maximum size is 4.5MB. Your file is ${fileSize.toFixed(2)}MB. Please use smaller files.`);
+                showError(`File too large. Maximum size is 50MB. Your file is ${fileSize.toFixed(2)}MB. Please use smaller files.`);
                 return;
             }
             
@@ -102,7 +102,7 @@ HTML_CONTENT = '''<!DOCTYPE html>
                 const response = await fetch(API_URL, { method: 'POST', body: formData });
                 if (!response.ok) {
                     if (response.status === 413) {
-                        showError('File too large. Vercel serverless functions have a 4.5MB limit. Please use smaller files.');
+                        showError('File too large. Maximum size is 50MB. Please use smaller files.');
                         return;
                     }
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -324,11 +324,11 @@ def serve_html():
 @app.route('/api/check', methods=['POST', 'OPTIONS'])
 def api_check():
     """Handle API requests"""
-    # Check content length before processing
-    if request.content_length and request.content_length > 4.5 * 1024 * 1024:  # Vercel's limit is ~4.5MB
+    # Check content length before processing (50MB limit)
+    if request.content_length and request.content_length > 50 * 1024 * 1024:
         response = jsonify({
             'success': False,
-            'error': f'File too large. Maximum size is 4.5MB. Your file is {request.content_length / 1024 / 1024:.2f}MB.'
+            'error': f'File too large. Maximum size is 50MB. Your file is {request.content_length / 1024 / 1024:.2f}MB.'
         })
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 413
@@ -416,7 +416,7 @@ def check_files():
         status_code = 500
         # Handle specific errors
         if '413' in error_msg or 'Request Entity Too Large' in error_msg or 'too large' in error_msg.lower():
-            error_msg = 'File too large. Vercel serverless functions have a 4.5MB limit. Please use smaller files.'
+            error_msg = 'File too large. Maximum size is 50MB. Please use smaller files.'
             status_code = 413
         response = jsonify({
             'success': False,

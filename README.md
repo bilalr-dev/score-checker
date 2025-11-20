@@ -1,94 +1,82 @@
-# Score Checker Web App - Vercel Deployment
+# Score Checker Web App
 
 Production-ready web application for validating and scoring robot satisfaction output files.
 
-## 🚀 Deploy to Vercel
+## 🚀 Deployment Options
 
-### Quick Deploy
+### Option 1: Railway (Recommended for Large Files)
 
-1. **Install Vercel CLI** (if not already installed):
+Railway supports files up to 50MB+ and is perfect for this use case.
+
+1. **Install Railway CLI:**
    ```bash
-   npm i -g vercel
+   npm i -g @railway/cli
    ```
 
-2. **Navigate to the project folder**:
+2. **Login and deploy:**
    ```bash
-   cd score-checker-web
+   railway login
+   railway init
+   railway up
    ```
 
-3. **Deploy**:
-   ```bash
-   vercel
-   ```
-   
-   Follow the prompts:
-   - Link to existing project or create new
-   - Confirm settings
-   - Deploy!
+3. **Or use Railway Dashboard:**
+   - Go to [railway.app](https://railway.app)
+   - New Project → Deploy from GitHub
+   - Select this repository
+   - Railway will auto-detect Python and deploy
 
-### Alternative: Deploy via GitHub
+### Option 2: Render
 
-1. Push `score-checker-web` folder to GitHub
-2. Go to [vercel.com](https://vercel.com)
-3. Import your repository
-4. Set **Root Directory** to `score-checker-web`
-5. Vercel will automatically detect Python
-6. Click **Deploy**
+Render also supports larger files and is free tier friendly.
 
-## 📁 Project Structure
+1. Go to [render.com](https://render.com)
+2. New → Web Service
+3. Connect your GitHub repository
+4. Settings:
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn api.index:app --bind 0.0.0.0:$PORT`
+   - **Environment:** Python 3
 
-```
-score-checker-web/
-├── api/
-│   └── index.py          # Serverless function (Flask app)
-├── index.html            # Frontend interface
-├── vercel.json           # Vercel configuration
-├── requirements.txt     # Python dependencies
-└── README.md            # This file
-```
+### Option 3: Fly.io
+
+Fly.io supports large files and has good performance.
+
+1. Install Fly CLI: `curl -L https://fly.io/install.sh | sh`
+2. Run: `fly launch`
+3. Deploy: `fly deploy`
+
+### Option 4: Keep Vercel (with limitations)
+
+If you want to stay on Vercel, you'll need to:
+- Split large files into smaller chunks
+- Process files in batches
+- Use a different approach for file handling
+
+## 📦 Requirements
+
+- Python 3.9+
+- Flask 3.0.0
+- Gunicorn (for production)
 
 ## 🔧 Configuration
 
-The `vercel.json` file configures:
-- Python serverless function at `/api/check`
-- Static file serving for `index.html`
-- Automatic routing
+The app is configured to handle files up to **50MB** (configurable in `api/index.py`).
 
-## ✨ Features
+## 🌐 Features
 
-- ✅ Serverless architecture (scales automatically)
-- ✅ CORS enabled for cross-origin requests
-- ✅ File upload support (up to 16MB)
+- ✅ Handles files up to 50MB
 - ✅ Real-time validation and scoring
-- ✅ Production-ready error handling
+- ✅ Beautiful, modern interface
+- ✅ Cross-platform (works in any browser)
+- ✅ CORS enabled
 
-## 🌐 After Deployment
+## 📝 File Size Limits
 
-Once deployed, your app will be available at:
-- `https://your-project.vercel.app`
+- **Railway/Render/Fly.io:** 50MB+ (configurable)
+- **Vercel:** 4.5MB (hard limit)
 
-## 📝 Environment Variables
-
-No environment variables needed for basic functionality.
-
-## 🧪 Testing Locally
-
-To test locally before deploying:
-
-```bash
-pip install Flask
-python api/index.py
-```
-
-Then visit `http://localhost:5000`
-
-## 📦 Dependencies
-
-- Flask 3.0.0 (handled automatically by Vercel)
-
-## 🔒 Security
-
-- File size limit: 16MB
-- CORS enabled for all origins (adjust in production if needed)
-- Input validation on all file contents
-
+For files larger than 50MB, consider:
+- Processing in chunks
+- Using a dedicated file processing service
+- Implementing streaming processing
