@@ -8,7 +8,7 @@ import json
 from typing import List, Dict, Set, Tuple, Optional, Any
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max (Vercel limit is 4.5MB for serverless, but we'll handle it)
 
 # HTML content embedded directly
 HTML_CONTENT = '''<!DOCTYPE html>
@@ -307,6 +307,14 @@ def serve_html():
 @app.route('/api/check', methods=['POST', 'OPTIONS'])
 def api_check():
     """Handle API requests"""
+    # Check content length before processing
+    if request.content_length and request.content_length > 4.5 * 1024 * 1024:  # Vercel's limit is ~4.5MB
+        response = jsonify({
+            'success': False,
+            'error': f'File too large. Maximum size is 4.5MB. Your file is {request.content_length / 1024 / 1024:.2f}MB.'
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 413
     return check_files()
 
 def check_files():
