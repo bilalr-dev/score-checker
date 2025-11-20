@@ -363,6 +363,8 @@ def check_files():
         return response
 
 # Vercel Python runtime automatically detects Flask apps
-# The app object is exported and Vercel will use it
-# When routing /api/check to this function, Flask receives the request at /
+# The app object is the default export
+# Make sure app is accessible at module level
+if __name__ == '__main__':
+    app.run(debug=True)
 
