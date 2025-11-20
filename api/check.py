@@ -163,7 +163,19 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 # FLASK ROUTES
 # ----------------------------------------------------------
 
-@app.route('/', methods=['POST', 'OPTIONS'])
+@app.route('/', methods=['GET', 'POST', 'OPTIONS'])
+def handler():
+    if request.method == 'GET':
+        # Serve the HTML file for GET requests
+        try:
+            with open('index.html', 'r') as f:
+                return f.read(), 200, {'Content-Type': 'text/html'}
+        except FileNotFoundError:
+            return jsonify({'error': 'index.html not found'}), 404
+    
+    # Handle POST requests for API
+    return check_files()
+
 def check_files():
     # Handle CORS preflight
     if request.method == 'OPTIONS':
