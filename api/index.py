@@ -250,7 +250,7 @@ def check_files():
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
-# Export handler for Vercel
-# Vercel's @vercel/python automatically detects Flask apps
-# The app object is the default export
+# Vercel Python runtime automatically detects Flask apps
+# The app object is exported and Vercel will use it
+# When routing /api/check to this function, Flask receives the request at /
 
