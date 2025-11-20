@@ -81,6 +81,15 @@ HTML_CONTENT = '''<!DOCTYPE html>
             const inputFile = document.getElementById('input_file').files[0];
             const outputFile = document.getElementById('output_file').files[0];
             if (!inputFile || !outputFile) { showError('Please select both input and output files.'); return; }
+            
+            // Check file sizes (Vercel limit is 4.5MB)
+            const maxSize = 4.5 * 1024 * 1024; // 4.5MB
+            if (inputFile.size > maxSize || outputFile.size > maxSize) {
+                const fileSize = Math.max(inputFile.size, outputFile.size) / 1024 / 1024;
+                showError(`File too large. Maximum size is 4.5MB. Your file is ${fileSize.toFixed(2)}MB. Please use smaller files.`);
+                return;
+            }
+            
             formData.append('input_file', inputFile);
             formData.append('output_file', outputFile);
             const checkButton = document.getElementById('checkButton');
