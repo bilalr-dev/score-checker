@@ -1,13 +1,19 @@
 {
-  "functions": {
-    "api/check.py": {
-      "includeFiles": "api/**"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/check",
       "destination": "/api/check.py"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     }
   ]
 }
