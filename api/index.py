@@ -163,7 +163,8 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 # FLASK ROUTES
 # ----------------------------------------------------------
 
-@app.route('/check', methods=['POST', 'OPTIONS'])
+@app.route('/api/check', methods=['POST', 'OPTIONS'])
+@app.route('/check', methods=['POST', 'OPTIONS'])  # Fallback if Vercel strips /api
 def check_files():
     # Handle CORS preflight
     if request.method == 'OPTIONS':
