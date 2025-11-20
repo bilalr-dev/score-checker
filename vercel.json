@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/check.py": {
+      "includeFiles": "api/**"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/check",
