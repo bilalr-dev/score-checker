@@ -3,7 +3,7 @@ Vercel Serverless Function for Score Checker
 Production-ready Flask app for Vercel deployment
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import json
 from typing import List, Dict, Set, Tuple, Optional, Any
 
@@ -272,7 +272,7 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 def handler():
     if request.method == 'GET':
         # Serve the embedded HTML for GET requests
-        return HTML_CONTENT, 200, {'Content-Type': 'text/html'}
+        return Response(HTML_CONTENT, mimetype='text/html')
     
     # Handle POST requests for API
     return check_files()
