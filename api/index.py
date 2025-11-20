@@ -92,6 +92,10 @@ HTML_CONTENT = '''<!DOCTYPE html>
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: formData });
                 if (!response.ok) {
+                    if (response.status === 413) {
+                        showError('File too large. Vercel serverless functions have a 4.5MB limit. Please use smaller files.');
+                        return;
+                    }
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
@@ -103,7 +107,11 @@ HTML_CONTENT = '''<!DOCTYPE html>
                 }
             } catch (error) { 
                 console.error('Error:', error);
-                showError('Network error: ' + error.message); 
+                if (error.message.includes('413')) {
+                    showError('File too large. Maximum size is 4.5MB. Please use smaller files.');
+                } else {
+                    showError('Network error: ' + error.message); 
+                }
             } finally {
                 checkButton.disabled = false;
                 loading.classList.remove('active');
@@ -395,12 +403,18 @@ def check_files():
         return response
     
     except Exception as e:
+        error_msg = str(e)
+        status_code = 500
+        # Handle specific errors
+        if '413' in error_msg or 'Request Entity Too Large' in error_msg or 'too large' in error_msg.lower():
+            error_msg = 'File too large. Vercel serverless functions have a 4.5MB limit. Please use smaller files.'
+            status_code = 413
         response = jsonify({
             'success': False,
-            'error': f'An error occurred: {str(e)}'
+            'error': error_msg
         })
         response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+        return response, status_code
 
 # Vercel Python runtime automatically detects Flask apps
 # The app object is the default export
