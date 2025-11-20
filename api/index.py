@@ -164,7 +164,6 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 # ----------------------------------------------------------
 
 @app.route('/', methods=['POST', 'OPTIONS'])
-@app.route('/check', methods=['POST', 'OPTIONS'])
 def check_files():
     # Handle CORS preflight
     if request.method == 'OPTIONS':
