@@ -267,19 +267,18 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 # FLASK ROUTES
 # ----------------------------------------------------------
 
-@app.route('/', methods=['GET', 'POST', 'OPTIONS'])
-@app.route('/api/check', methods=['POST', 'OPTIONS'])
-def handler():
+@app.route('/', methods=['GET'])
+def serve_html():
+    """Serve the HTML page for GET requests to root"""
     try:
-        if request.method == 'GET':
-            # Serve the embedded HTML for GET requests
-            return Response(HTML_CONTENT, mimetype='text/html', status=200)
-        
-        # Handle POST requests for API
-        return check_files()
+        return Response(HTML_CONTENT, mimetype='text/html', status=200)
     except Exception as e:
-        # Return error response instead of crashing
-        return jsonify({'error': str(e)}), 500
+        return f'<html><body><h1>Error</h1><p>{str(e)}</p></body></html>', 500
+
+@app.route('/api/check', methods=['POST', 'OPTIONS'])
+def api_check():
+    """Handle API requests"""
+    return check_files()
 
 def check_files():
     # Handle CORS preflight
