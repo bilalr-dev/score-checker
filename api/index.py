@@ -91,23 +91,52 @@ HTML_CONTENT = '''<!DOCTYPE html>
             results.style.display = 'none';
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: formData });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
-                if (data.success) { showSuccess(data); } else { showError(data.error || 'An error occurred.', data.warnings); }
-            } catch (error) { showError('Network error: ' + error.message); } finally {
+                console.log('API Response:', data);
+                if (data.success) { 
+                    showSuccess(data); 
+                } else { 
+                    showError(data.error || 'An error occurred.', data.warnings); 
+                }
+            } catch (error) { 
+                console.error('Error:', error);
+                showError('Network error: ' + error.message); 
+            } finally {
                 checkButton.disabled = false;
                 loading.classList.remove('active');
             }
         });
         function showSuccess(data) {
+            console.log('showSuccess called with:', data);
             const results = document.getElementById('results');
+            if (!results) {
+                console.error('Results element not found!');
+                return;
+            }
             results.className = 'results success';
-            results.innerHTML = `<h2>✅ Success!</h2><div class="score-display">${data.global_score}</div><p style="text-align: center; color: #666; margin-bottom: 20px;">Global Robotic Satisfaction Score</p><div class="info-item"><strong>Number of frameglasses:</strong> ${data.num_frames}</div><div class="info-item"><strong>Number of paintings:</strong> ${data.num_paintings}</div>${data.warnings && data.warnings.length > 0 ? `<div class="warnings"><h3>⚠️ Warnings</h3><ul>${data.warnings.map(w => '<li>' + w + '</li>').join('')}</ul></div>` : ''}`;
+            results.style.display = 'block';
+            const warningsHtml = data.warnings && data.warnings.length > 0 
+                ? `<div class="warnings"><h3>⚠️ Warnings</h3><ul>${data.warnings.map(w => '<li>' + w.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</li>').join('')}</ul></div>` 
+                : '';
+            results.innerHTML = `<h2>✅ Success!</h2><div class="score-display">${data.global_score}</div><p style="text-align: center; color: #666; margin-bottom: 20px;">Global Robotic Satisfaction Score</p><div class="info-item"><strong>Number of frameglasses:</strong> ${data.num_frames}</div><div class="info-item"><strong>Number of paintings:</strong> ${data.num_paintings}</div>${warningsHtml}`;
             results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         function showError(error, warnings = []) {
+            console.log('showError called with:', error, warnings);
             const results = document.getElementById('results');
+            if (!results) {
+                console.error('Results element not found!');
+                return;
+            }
             results.className = 'results error';
-            results.innerHTML = `<h2>❌ Error</h2><p style="margin: 15px 0; color: #721c24;">${error}</p>${warnings && warnings.length > 0 ? `<div class="warnings"><h3>Details</h3><ul>${warnings.map(w => '<li>' + w + '</li>').join('')}</ul></div>` : ''}`;
+            results.style.display = 'block';
+            const warningsHtml = warnings && warnings.length > 0 
+                ? `<div class="warnings"><h3>Details</h3><ul>${warnings.map(w => '<li>' + w.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</li>').join('')}</ul></div>` 
+                : '';
+            results.innerHTML = `<h2>❌ Error</h2><p style="margin: 15px 0; color: #721c24;">${error}</p>${warningsHtml}`;
             results.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     </script>
