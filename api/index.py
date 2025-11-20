@@ -163,7 +163,7 @@ def compute_global_score(frames: Frames, paintings: Dict[int, Painting]) -> Opti
 # FLASK ROUTES
 # ----------------------------------------------------------
 
-@app.route('/api/check', methods=['POST', 'OPTIONS'])
+@app.route('/check', methods=['POST', 'OPTIONS'])
 def check_files():
     # Handle CORS preflight
     if request.method == 'OPTIONS':
@@ -249,6 +249,6 @@ def check_files():
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
-# Vercel automatically handles Flask apps with @vercel/python
-# The app object is exported and Vercel will use it
+# Export the app for Vercel
+# Vercel's @vercel/python will automatically detect and use this Flask app
 
