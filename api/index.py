@@ -4,11 +4,22 @@ Production-ready Flask app for Vercel deployment
 """
 
 from flask import Flask, request, jsonify, Response
+from werkzeug.exceptions import RequestEntityTooLarge
 import json
 from typing import List, Dict, Set, Tuple, Optional, Any
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 110 * 1024 * 1024  # 110MB max (for two 50MB files + multipart overhead)
+
+# Handle Flask's RequestEntityTooLarge exception
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(e):
+    response = jsonify({
+        'success': False,
+        'error': f'Request too large. Maximum total size is 110MB (for two 50MB files). Please use smaller files.'
+    })
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response, 413
 
 # HTML content embedded directly
 HTML_CONTENT = '''<!DOCTYPE html>
@@ -324,14 +335,8 @@ def serve_html():
 @app.route('/api/check', methods=['POST', 'OPTIONS'])
 def api_check():
     """Handle API requests"""
-    # Check total content length with buffer for multipart overhead (allow up to 110MB total for two 50MB files + overhead)
-    if request.content_length and request.content_length > 110 * 1024 * 1024:
-        response = jsonify({
-            'success': False,
-            'error': f'Request too large. Maximum total size is 110MB (for two 50MB files). Your request is {request.content_length / 1024 / 1024:.2f}MB.'
-        })
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response, 413
+    # Note: We don't check content_length here because Flask's MAX_CONTENT_LENGTH
+    # will handle it, and we check individual file sizes in check_files()
     return check_files()
 
 def check_files():
@@ -432,12 +437,20 @@ def check_files():
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
     
+    except RequestEntityTooLarge:
+        # This should be caught by the error handler, but just in case
+        response = jsonify({
+            'success': False,
+            'error': 'Request too large. Maximum total size is 110MB (for two 50MB files). Please use smaller files.'
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 413
     except Exception as e:
         error_msg = str(e)
         status_code = 500
         # Handle specific errors
         if '413' in error_msg or 'Request Entity Too Large' in error_msg or 'too large' in error_msg.lower():
-            error_msg = 'File too large. Maximum size is 50MB. Please use smaller files.'
+            error_msg = f'File too large. Maximum size is 50MB per file. Error: {error_msg}'
             status_code = 413
         response = jsonify({
             'success': False,
