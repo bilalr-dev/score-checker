@@ -8,7 +8,7 @@ import json
 from typing import List, Dict, Set, Tuple, Optional, Any
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max
+app.config['MAX_CONTENT_LENGTH'] = 110 * 1024 * 1024  # 110MB max (for two 50MB files + multipart overhead)
 
 # HTML content embedded directly
 HTML_CONTENT = '''<!DOCTYPE html>
@@ -365,14 +365,13 @@ def check_files():
             
             # Check individual file sizes (50MB limit per file)
             max_file_size = 50 * 1024 * 1024  # 50MB
-            # Get file sizes - seek to end to get size, then reset
-            input_file.seek(0, 2)  # Seek to end
-            input_size = input_file.tell()
-            input_file.seek(0)  # Reset to beginning
             
-            output_file.seek(0, 2)  # Seek to end
-            output_size = output_file.tell()
-            output_file.seek(0)  # Reset to beginning
+            # Read files to check size (we need to read them anyway)
+            input_content_bytes = input_file.read()
+            output_content_bytes = output_file.read()
+            
+            input_size = len(input_content_bytes)
+            output_size = len(output_content_bytes)
             
             if input_size > max_file_size or output_size > max_file_size:
                 large_file_size = max(input_size, output_size) / 1024 / 1024
@@ -383,8 +382,10 @@ def check_files():
                 response.headers.add('Access-Control-Allow-Origin', '*')
                 return response, 413
             
-            input_content = input_file.read().decode('utf-8')
-            output_content = output_file.read().decode('utf-8')
+            # Decode the content
+            input_content = input_content_bytes.decode('utf-8')
+            output_content = output_content_bytes.decode('utf-8')
+            
         
         # Validate output file
         frames, output_warnings = read_and_verify_output(output_content)
