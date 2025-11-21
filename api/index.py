@@ -324,11 +324,11 @@ def serve_html():
 @app.route('/api/check', methods=['POST', 'OPTIONS'])
 def api_check():
     """Handle API requests"""
-    # Check content length before processing (50MB limit)
-    if request.content_length and request.content_length > 50 * 1024 * 1024:
+    # Check total content length with buffer for multipart overhead (allow up to 110MB total for two 50MB files + overhead)
+    if request.content_length and request.content_length > 110 * 1024 * 1024:
         response = jsonify({
             'success': False,
-            'error': f'File too large. Maximum size is 50MB. Your file is {request.content_length / 1024 / 1024:.2f}MB.'
+            'error': f'Request too large. Maximum total size is 110MB (for two 50MB files). Your request is {request.content_length / 1024 / 1024:.2f}MB.'
         })
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 413
@@ -362,6 +362,26 @@ def check_files():
                 response = jsonify({'success': False, 'error': 'Please select both files.'})
                 response.headers.add('Access-Control-Allow-Origin', '*')
                 return response
+            
+            # Check individual file sizes (50MB limit per file)
+            max_file_size = 50 * 1024 * 1024  # 50MB
+            # Get file sizes - seek to end to get size, then reset
+            input_file.seek(0, 2)  # Seek to end
+            input_size = input_file.tell()
+            input_file.seek(0)  # Reset to beginning
+            
+            output_file.seek(0, 2)  # Seek to end
+            output_size = output_file.tell()
+            output_file.seek(0)  # Reset to beginning
+            
+            if input_size > max_file_size or output_size > max_file_size:
+                large_file_size = max(input_size, output_size) / 1024 / 1024
+                response = jsonify({
+                    'success': False,
+                    'error': f'File too large. Maximum size is 50MB per file. Your largest file is {large_file_size:.2f}MB. Please use smaller files.'
+                })
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                return response, 413
             
             input_content = input_file.read().decode('utf-8')
             output_content = output_file.read().decode('utf-8')
